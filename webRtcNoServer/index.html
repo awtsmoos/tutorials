@@ -1,0 +1,104 @@
+B"H
+<br>
+<button id="cap">Capture webcam</button>
+<button id="makeOffer">Make Offer</button>
+<br>
+<textarea id="offerText"></textarea>
+<br>
+<br>
+<button id="acceptOffer">Accept Offer [from other side]
+    <br>
+    and automatically create answer
+</button>
+<br>
+<textarea id="offerToReadFrom"
+    placeholder="Paste offer text to read from"
+></textarea>
+<br>
+<textarea id="answerText"
+placeholder="Wait for answer to be made"></textarea>
+<br>
+<br>
+<button id="getAnswer">Accept Answer</button>
+<br>
+<textarea id="pasteAnswer" 
+placeholder="Paste answer text here"></textarea>
+<br>
+<br>
+<button id="iceAdd">Add new ice candidate</button>
+<br>
+<textarea id="newIce" placeholder="paste new ice candidate from other side here">
+
+</textarea>
+<br>
+<div id="icees">
+
+</div>
+<br>
+<video muted autoplay id="localVid"></video>
+<br>
+
+<video muted autoplay id="remoteVid"></video>
+<script src="webrtc.js"></script>
+<script>
+    var wrapp = new WebRTCWrapper();
+    wrapp.start();
+
+    iceAdd.onclick = () => {
+        var iceObj = JSON.parse(newIce.value)
+        wrapp.addIceInfo(iceObj)
+    };
+
+    cap.onclick = e=> {
+        navigator
+        .mediaDevices
+        .getUserMedia({
+            video: 1,
+            audio: 1
+        }).then(nahar => {
+            wrapp.addStream(nahar);
+            localVid.srcObject = nahar;
+        })
+    }
+
+    wrapp.ontrack = track => {
+        console.log(track,"Added track!")
+        var stream = track.streams[0]
+        remoteVid.srcObject = stream;
+
+    };
+    wrapp.onice = (event) => {
+        var ice = event.candidate;
+        var textarea = document.createElement("textarea")
+        textarea.value = JSON.stringify(ice)
+        icees.appendChild(textarea)
+    }
+
+    wrapp.onacceptedanswer = () => {
+        console.log("ready to start freezing")
+    }
+    wrapp.oncreatedanswer = createdAnswer => {
+        console.log("made answer!",createdAnswer)
+        answerText.innerHTML = JSON.stringify(createdAnswer);
+    }
+
+    //who's getting
+    acceptOffer.onclick = e => {
+        var off = offerToReadFrom.value/*text*/;
+        wrapp.acceptOfferAndCreateAnswer(JSON.parse(off))
+    }
+
+    //who's calling
+    getAnswer.onclick = e=>{
+        var answerText = 
+        pasteAnswer.value
+        wrapp.acceptAnswer(JSON.parse(answerText))
+    }
+    wrapp.onoffer = offerObject => {
+        offerText.innerHTML = JSON.stringify(offerObject);
+    };
+
+    makeOffer.onclick = e=> {
+        wrapp.makeOffer()
+    }
+</script>
